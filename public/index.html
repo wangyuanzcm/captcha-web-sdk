@@ -80,8 +80,9 @@
         el.addEventListener("click", e => {
             // 样式配置
             const config = {
-                requestCaptchaDataUrl: "http://localhost:8080/gen?type=" + el.dataset.type,
-                validCaptchaUrl: "http://localhost:8080/check",
+                // 使用相对路径并由 webpack devServer 提供 mock 接口，避免跨域及后端缺失
+                requestCaptchaDataUrl: "/gen?type=" + el.dataset.type,
+                validCaptchaUrl: "/check",
                 bindEl: "#captcha-box"
             }
             // const style = {

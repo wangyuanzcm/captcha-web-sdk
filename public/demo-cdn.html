@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TAC CDN Demo</title>
+  <link rel="stylesheet" href="/tac/css/tac.css">
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; padding: 20px; }
+    #captcha-box { width: 360px; margin: 20px auto; }
+    .actions { text-align: center; margin-top: 16px; }
+    button { padding: 6px 12px; }
+  </style>
+</head>
+<body>
+  <h2>TAC CDN 使用示例</h2>
+  <p>此页面直接通过 <code>dist/tac.min.js</code> 和 <code>tac.css</code> 演示在浏览器中使用验证码。</p>
+
+  <div id="captcha-box"></div>
+  <div class="actions">
+    <button id="show">显示验证码</button>
+  </div>
+
+  <script src="/tac.min.js"></script>
+  <script>
+    // mock 接口由 webpack devServer 提供：/gen 与 /check
+    const config = new window.CaptchaConfig({
+      requestCaptchaDataUrl: '/gen?type=',
+      validCaptchaUrl: '/check',
+      bindEl: '#captcha-box',
+      validSuccess: function(res, c, tac) {
+        tac.destroyWindow();
+        alert('验证成功');
+      },
+      validFail: function(res, c, tac) {
+        console.log('验证失败', res);
+        tac.reloadCaptcha();
+      }
+    });
+
+    const style = {
+      logoUrl: null
+    };
+
+    const tac = new window.TAC(config, style);
+
+    document.getElementById('show').addEventListener('click', function() {
+      tac.init();
+    });
+  </script>
+</body>
+</html>

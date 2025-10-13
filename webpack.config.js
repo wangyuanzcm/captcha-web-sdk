@@ -60,9 +60,38 @@ const commonConfig = {
         new CleanWebpackPlugin()
     ],
     devServer: {
-        // 开发时可直接访问到 ./public 下的静态资源，这些资源在开发中不必打包
+        // 开发时可直接访问到 ./public、./dist、./examples 下的静态资源
         port: 3000,
-        static: "./dist"
+        static: ["./dist", "./public", "./examples"],
+        setupMiddlewares: (middlewares, devServer) => {
+            const app = devServer.app;
+            // 简易开发环境接口，避免 8080 后端缺失导致请求失败
+            app.post('/gen', (req, res) => {
+                try {
+                    const url = new URL(req.url, 'http://localhost');
+                    const type = url.searchParams.get('type') || (req.body && req.body.type) || 'SLIDER';
+                    // 目前仅提供 SLIDER 的示例数据，其它类型返回占位数据
+                    if (type === 'SLIDER') {
+                        const slider = require('./src/slider.json');
+                        return res.json(slider);
+                    }
+                    // 占位返回，前端可正常处理为失败或提示刷新
+                    return res.json({
+                        id: 'mock-' + Date.now(),
+                        captcha: { type }
+                    });
+                } catch (e) {
+                    return res.status(500).json({ code: 500, msg: 'mock gen error', error: String(e) });
+                }
+            });
+
+            app.post('/check', (req, res) => {
+                // 简易校验：开发环境直接返回成功
+                return res.json({ code: 200, msg: 'ok' });
+            });
+
+            return middlewares;
+        }
     }
 }
 

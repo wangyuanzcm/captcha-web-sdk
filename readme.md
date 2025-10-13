@@ -11,19 +11,89 @@
 
 
 
-## 安装
+## 安装与使用（支持 NPM 与 CDN）
 
-1. 将打包好的`tac`目录放到自己项目中,如果是vue、react等框架，将tac目录放到public目录中、或者放到某个可以访问到地方，比如oss之类的可以被浏览器访问到的地方 （tac下载地址 [https://gitee.com/tianai/tianai-captcha-web-sdk/releases/tag/1.2](https://gitee.com/tianai/tianai-captcha-web-sdk/releases/tag/1.2)）
+### 方式一：NPM 包（推荐）
 
-2. 引入初始化函数 (load.js下载地址 [https://minio.tianai.cloud/public/static/captcha/js/load.min.js](https://minio.tianai.cloud/public/static/captcha/js/load.min.js)) 可自己将load.js下载到本地
+1) 安装
 
-   ```html
-   <script src="load.min.js"></script>
-   ```
+```bash
+npm install captcha-web-sdk
+```
 
-   **注:  如果是web框架，将该引入代码放到 `public/index.html`**
+2) 在项目中使用（以 React/Vue 为例）
 
-## 使用方法
+```js
+import { TianAiCaptcha, CaptchaConfig } from 'captcha-web-sdk';
+import 'captcha-web-sdk/dist/tac/css/tac.css';
+
+const config = new CaptchaConfig({
+  bindEl: '#captcha-box',
+  requestCaptchaDataUrl: '/gen?type=',
+  validCaptchaUrl: '/check',
+  validSuccess: (res, c, tac) => {
+    tac.destroyWindow();
+    console.log('验证成功', res);
+  },
+  validFail: (res, c, tac) => {
+    console.log('验证失败', res);
+    tac.reloadCaptcha();
+  },
+});
+
+const style = { logoUrl: null };
+
+const tac = new TianAiCaptcha(config, style);
+tac.init();
+```
+
+### 方式二：CDN/浏览器直接引入
+
+两种使用方式：
+
+- A. 使用本项目提供的 UMD 构建（无需 load.js）：
+
+```html
+<link rel="stylesheet" href="/tac/css/tac.css">
+<script src="/tac.min.js"></script>
+<script>
+  const config = new window.CaptchaConfig({
+    bindEl: '#captcha-box',
+    requestCaptchaDataUrl: '/gen?type=',
+    validCaptchaUrl: '/check',
+    validSuccess: (res, c, tac) => { tac.destroyWindow(); },
+    validFail: (res, c, tac) => { tac.reloadCaptcha(); },
+  });
+  const style = { logoUrl: null };
+  const tac = new window.TAC(config, style);
+  tac.init();
+</script>
+```
+
+- B. 沿用原作者的 load.js（保持旧版用法）：
+
+```html
+<script src="load.min.js"></script>
+<script>
+  window.initTAC('./tac', config, style).then(tac => tac.init());
+</script>
+```
+
+注：如果通过公共 CDN（如 unpkg/jsDelivr），可参考：
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/captcha-web-sdk/dist/tac/css/tac.css">
+<script src="https://unpkg.com/captcha-web-sdk/dist/tac.min.js"></script>
+```
+
+发布后也可使用 jsDelivr：
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/captcha-web-sdk/dist/tac/css/tac.css">
+<script src="https://cdn.jsdelivr.net/npm/captcha-web-sdk/dist/tac.min.js"></script>
+```
+
+## 使用方法（示例）
 
 2. 创建一个div块用于渲染验证码， 该div用于装载验证码
 
@@ -76,11 +146,15 @@
        // 参数1 为 tac文件是目录地址， 目录里包含 tac的js和css等文件
        // 参数2 为 tac验证码相关配置
        // 参数3 为 tac窗口一些样式配置
-       window.initTAC("./tac", config, style).then(tac => {
-           tac.init(); // 调用init则显示验证码
-       }).catch(e => {
-           console.log("初始化tac失败", e);
-       })
+       // 方式一：CDN UMD 构建（不使用 load.js）
+       const cfg = new window.CaptchaConfig(config);
+       const tac = new window.TAC(cfg, style);
+       tac.init();
+
+       // 方式二：沿用原 load.js
+       // window.initTAC("./tac", config, style).then(tac => {
+       //     tac.init();
+       // }).catch(e => console.log("初始化tac失败", e))
    }
    ```
 
