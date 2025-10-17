@@ -15,7 +15,9 @@ const commonConfig = {
     },
     resolve: {
         alias: {
-            "@": path.join(__dirname, "./src") // 这样@符号就表示项目根目录中src这一层路径
+            "@": path.join(__dirname, "./src"), // 这样@符号就表示项目根目录中src这一层路径
+            // 强制所有对 'sass' 的解析使用 Embedded Sass 实现，避免旧 API 产生的弃用告警
+            'sass': require.resolve('sass-embedded')
         }
     },
     module: {
@@ -26,7 +28,17 @@ const commonConfig = {
             },
             {
                 test: /\.s[ac]ss$/,
-                use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    "css-loader",
+                    {
+                        loader: "sass-loader",
+                        options: {
+                            implementation: require('sass-embedded'),
+                            api: 'modern'
+                        }
+                    }
+                ],
             },
             {
                 test: /\.(png|svg|jpg|jpeg|gif)$/i,
@@ -62,9 +74,25 @@ const commonConfig = {
     devServer: {
         // 开发时可直接访问到 ./public、./dist、./examples 下的静态资源
         port: 3000,
+        // 允许其他端口（如 Vite 的 5173/5174）跨域访问本服务提供的 /gen 与 /check 接口
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        },
         static: ["./dist", "./public", "./examples"],
         setupMiddlewares: (middlewares, devServer) => {
             const app = devServer.app;
+            // 处理预检请求，避免跨域时 OPTIONS 被拦截
+            app.use((req, res, next) => {
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+                res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                if (req.method === 'OPTIONS') {
+                    return res.sendStatus(204);
+                }
+                next();
+            });
             // 简易开发环境接口，避免 8080 后端缺失导致请求失败
             app.post('/gen', (req, res) => {
                 try {

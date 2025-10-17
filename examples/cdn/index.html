@@ -14,14 +14,14 @@
 </head>
 <body>
   <h2>TAC CDN 使用示例（examples/cdn）</h2>
-  <p>直接通过 <code>dist/tac.min.js</code> 与 <code>tac.css</code> 使用全局变量 window.TAC 与 window.CaptchaConfig。</p>
+  <p>直接通过 <code>dist/umd/tac.min.js</code> 与 <code>tac.css</code> 使用全局变量 window.TAC 与 window.CaptchaConfig。</p>
 
   <div id="captcha-box"></div>
   <div class="actions">
     <button id="show">显示验证码</button>
   </div>
 
-  <script src="/tac.min.js"></script>
+  <script src="/umd/tac.min.js"></script>
   <script>
     const config = new window.CaptchaConfig({
       requestCaptchaDataUrl: '/gen?type=',

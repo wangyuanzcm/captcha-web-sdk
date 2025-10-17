@@ -1,6 +1,5 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
 /**
@@ -14,11 +13,14 @@ module.exports = (env = {}, argv = {}) => {
   // filename selection
   let filename = 'tac.js';
   if (format === 'umd') {
-    filename = isProd ? 'tac.min.js' : 'tac.umd.js';
+    // Output UMD bundle to dist/umd/
+    filename = isProd ? 'umd/tac.min.js' : 'umd/tac.umd.js';
   } else if (format === 'esm') {
-    filename = 'tac.esm.js';
+    // Output ESM bundle to dist/esm/
+    filename = 'esm/tac.esm.js';
   } else if (format === 'cjs') {
-    filename = 'tac.cjs.js';
+    // Output CJS bundle to dist/cjs/
+    filename = 'cjs/tac.cjs.js';
   }
 
   // library output options
@@ -37,13 +39,25 @@ module.exports = (env = {}, argv = {}) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        // Force sass-loader and any consumers to use Embedded Sass implementation
+        'sass': require.resolve('sass-embedded'),
       },
     },
     module: {
       rules: [
         {
           test: /\.s[ac]ss$/,
-          use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
+          use: [
+            MiniCssExtractPlugin.loader,
+            'css-loader',
+            {
+              loader: 'sass-loader',
+              options: {
+                implementation: require('sass-embedded'),
+                api: 'modern',
+              },
+            },
+          ],
         },
         {
           test: /\.(png|svg|jpg|jpeg|gif)$/i,
@@ -60,8 +74,12 @@ module.exports = (env = {}, argv = {}) => {
       ],
     },
     plugins: [
+      // Keep CSS and images at top-level dist/tac/...
+      // so all formats share the same assets path.
       new MiniCssExtractPlugin({ filename: 'tac/css/tac.css' }),
-      new CleanWebpackPlugin(),
+      // Note: CleanWebpackPlugin was removed to prevent sequential builds (umd/esm/cjs)
+      // from cleaning the dist folder and deleting previously generated artifacts.
+      // This ensures all formats can coexist in dist.
     ],
     optimization: {
       minimize: isProd,
